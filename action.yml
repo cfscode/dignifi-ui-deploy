@@ -1,0 +1,55 @@
+name: 'Deploy'
+description: 'deploy front end assets'
+inputs:
+  rails-env:
+    description: 'rails backend env'
+    required: true
+    default: 'staging1'
+  bucket:
+    description: 's3 bucket'
+    required: true
+  distribution:
+    description: 'cloudfront distribution'
+    required: true
+  access-key-id:
+    description: 'aws access key id'
+    required: true
+  secret-access-key:
+    description: 'aws secret access key'
+    required: true
+  npm-token:
+    description: 'dignifi npm auth token'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Node Setup
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.17.3'
+        registry-url: 'https://registry.npmjs.org'
+        cache: 'yarn'
+    - run: yarn install
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+      shell: bash
+    - run: ENVIRONMENT=${{ inputs.rails-env }} yarn build
+      shell: bash
+    - name: Upload to s3
+      uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --delete
+      env:
+        AWS_S3_BUCKET: ${{ inputs.bucket }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
+        AWS_REGION: 'us-west-2'
+        SOURCE_DIR: 'dist'
+    - name: Invalidate Cloudfront Cache
+      uses: chetan/invalidate-cloudfront-action@master
+      env:
+        DISTRIBUTION: ${{ inputs.distribution }}
+        PATHS: '/*'
+        AWS_REGION: 'us-west-2'
+        AWS_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
