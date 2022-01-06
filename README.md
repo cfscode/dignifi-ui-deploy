@@ -1,6 +1,6 @@
 # dignifi-ui-deploy
 
-This is a composite Github Action that is used deploy UI assets to AWS S3 and Cloudfront.
+This is a composite Github Action that is used deploy UI assets to AWS S3 and Cloudfront. 
 
 See the confluence page for more information about setting up CI/CD for UI applications.
 
